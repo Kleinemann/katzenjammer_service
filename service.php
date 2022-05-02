@@ -138,6 +138,12 @@ if(isset($message->request))
 					$table ="buildings";
 					$order ="name";
 					break;
+				
+				case "UserBuildings":
+					//echo print_r($req->request);
+					$table ="user_buildings";
+					$where ="user_id = ".$req->request->ID;
+					break;
 
 				default:
 					$message->setError(98, "Select ist nicht definiert");
@@ -164,6 +170,55 @@ if(isset($message->request))
 			$sql .= ";";
 			//echo print_r($sql);
 			$message->data = DB_Manager::getTable($sql)->data;
+
+			break;
+
+		case "userUpdate":
+				$data = $req->data;
+				if(isset($data->home))
+					$update = "UPDATE user SET home='".json_encode($data->home)."' WHERE id = $data->id";
+				else
+					$update = "UPDATE user SET guild=$data->guild WHERE id = $data->id";
+
+
+				$update = DB_Manager::executeSql($update);
+				if($update->error != null)
+					$message->setError(42, $update->error);
+				else
+				{
+					$message->data["count"]	= $update->count;
+				}	
+			break;
+
+
+		case "buyBuilding":
+			$data = $req->data;
+			$user = $data->user_id;
+			$pos = $data->position;
+			$building = $data->building_id;
+			
+			$sqlBuilding = "SELECT * FROM buildings WHERE id = $building AND money <= (SELECT money FROM user where id = $user)";
+		
+			$dbRowBuilding = DB_Manager::getTable($sqlBuilding);
+			if($dbRowBuilding->count == 1)
+			{
+				$insert = "INSERT INTO user_buildings (user_id, building_id, position) VALUES ($user, $building, '".json_encode($pos)."');";
+
+				$money = $dbRowBuilding->data[0]['money'];
+				$update = "UPDATE user SET money = money - $money WHERE id = $user;";
+
+				$insert = DB_Manager::executeSql($insert);				
+				$update = DB_Manager::executeSql($update);
+				if($insert != null && $update != null)
+				{
+					$dbMoney = DB_Manager::getTable("SELECT money FROM user where id = $user");
+					$dbBuilding = DB_Manager::getTable("SELECT FROM user_Building where user_id = $user ORDER BY id desc LIMIT 1");
+					$message->data['money'] = $dbMoney->data[0]['money'];
+					$message->data['user_building'] = $dbRowBuilding->data[0];
+				}
+			}
+			else
+				$message->setError(101, "Das Gebäude ist zu teuer");
 
 			break;
 
