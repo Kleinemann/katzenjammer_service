@@ -7,6 +7,7 @@ header('Content-type: application/json; charset=utf-8');
 require_once("config.php");
 require_once("message.php");
 require_once("db_manager.php");
+require_once("quests.php");
 
 $message = new Message();
 
@@ -133,16 +134,37 @@ if(isset($message->request))
 					$where = "(date_from IS NULL || date_from <= DATE((NOW())) && (date_to IS NULL || date_to >= DATE(NOW())))";
 					break;
 
+				case "Heroes":
+					$table ="heroes";
+					break;
 
 				case "Buildings":
 					$table ="buildings";
-					$order ="name";
+					break;
+
+				case "BuildingHeroes":
+						$table ="building_heroes";
+						$order ="building_id";
+						break;
+
+				case "buildingQuests":
+					$table ="buildings";
+					break;
+
+				case "Icons":
+					$table ="icons";
+					$order ="id";
 					break;
 				
 				case "UserBuildings":
 					//echo print_r($req->request);
 					$table ="user_buildings";
 					$where ="user_id = ".$req->request->ID;
+					break;
+
+				case "Quests":
+					$table ="building_quest JOIN quests ON building_quest.quest_id = quests.id";
+					$where ="user_building_id in (SELECT id FROM user_buildings WHERE user_id = ".$req->request->ID.")";
 					break;
 
 				default:
@@ -172,6 +194,12 @@ if(isset($message->request))
 			$message->data = DB_Manager::getTable($sql)->data;
 
 			break;
+
+		case "createQuest":
+			//$building = $req->data->building_id;
+			$message->data = createQuest($req->data);
+			break;
+
 
 		case "userUpdate":
 				$data = $req->data;
