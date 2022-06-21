@@ -5,7 +5,7 @@ require_once("db_manager.php");
 function createQuest($data)
 {
     //print_r($data);
-    $sql = "SELECT * FROM quests WHERE building_id = ".$data->building_id.";";
+    $sql = "SELECT * FROM quests JOIN building_quest on quests.id = building_quest.building_id WHERE building_quest.building_id = ".$data->building_id.";";
     $quests = DB_Manager::getTable($sql);
 
     $quest = $quests->data[mt_rand(0, $quests->count-1)];
@@ -20,7 +20,7 @@ function createQuest($data)
     $questId = $quest['id'];
     $start = $quest['start'];
     $pos = json_encode($quest['position']);
-    $sqlInsert = "INSERT INTO building_quest (user_building_id, quest_id, position, start) VALUES ($userBuildingId, $questId, '$pos', $start);";
+    $sqlInsert = "INSERT INTO user_quest (user_building_id, quest_id, position, start) VALUES ($userBuildingId, $questId, '$pos', $start);";
 
     $insert = DB_Manager::executeSql($sqlInsert);
     //print_r($sqlInsert);

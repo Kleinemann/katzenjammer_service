@@ -157,13 +157,17 @@ if(isset($message->request))
 					break;
 				
 				case "UserBuildings":
-					//echo print_r($req->request);
 					$table ="user_buildings";
 					$where ="user_id = ".$req->request->ID;
 					break;
 
+				case "UserHeroes":
+						$table ="user_heroes";
+						$where ="user_id = ".$req->request->ID;
+						break;
+
 				case "Quests":
-					$table ="building_quest JOIN quests ON building_quest.quest_id = quests.id";
+					$table ="user_quest JOIN quests ON user_quest.quest_id = quests.id";
 					$where ="user_building_id in (SELECT id FROM user_buildings WHERE user_id = ".$req->request->ID.")";
 					break;
 
@@ -240,14 +244,46 @@ if(isset($message->request))
 				if($insert != null && $update != null)
 				{
 					$dbMoney = DB_Manager::getTable("SELECT money FROM user where id = $user");
-					$dbBuilding = DB_Manager::getTable("SELECT FROM user_Building where user_id = $user ORDER BY id desc LIMIT 1");
+					$dbBuilding = DB_Manager::getTable("SELECT * FROM user_Buildings where user_id = $user ORDER BY id desc LIMIT 1");
 					$message->data['money'] = $dbMoney->data[0]['money'];
-					$message->data['user_building'] = $dbRowBuilding->data[0];
+					$message->data['user_buildings'] = $dbBuilding->data[0];
 				}
 			}
 			else
 				$message->setError(101, "Das Gebäude ist zu teuer");
 
+			break;
+
+		case "buyHero":
+			$data = $req->data;
+			$user = $data->user_id;
+			$hero = $data->hero_id;
+			$building = $data->building_id;
+
+			$sqlHero = "SELECT * FROM heroes WHERE id = $hero AND money <= (SELECT money FROM user where id = $user)";
+
+			$dbRowHero = DB_Manager::getTable($sqlHero);
+
+			if($dbRowHero->count == 1)
+			{
+				$insert = "INSERT INTO user_heroes (user_id, building_id, hero_id) VALUES ($user, $building, $hero);";
+
+				$money = $dbRowHero->data[0]['money'];
+				$update = "UPDATE user SET money = money - $money WHERE id = $user;";
+
+				$insert = DB_Manager::executeSql($insert);				
+				$update = DB_Manager::executeSql($update);
+				if($insert != null && $update != null)
+				{
+					$dbMoney = DB_Manager::getTable("SELECT money FROM user where id = $user");
+					$dbHero = DB_Manager::getTable("SELECT * FROM user_heroes where building_id = $building ORDER BY id desc LIMIT 1");
+					$message->data['money'] = $dbMoney->data[0]['money'];
+					$message->data['user_hero'] = $dbHero->data[0];
+				}
+			}
+			else
+				$message->setError(101, "Der Held ist zu teuer");
+				
 			break;
 
 		default:
